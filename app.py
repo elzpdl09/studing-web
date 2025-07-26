@@ -62,7 +62,6 @@ def login():
         user = result.fetchone()
         logging.debug(f"조회 결과: {user}")
         if user:
-            # JSON으로 redirect URL 전달, 프론트엔드에서 처리
             return jsonify({'success': True, 'redirect': url_for('main', username=name)})
         else:
             return jsonify({'success': False, 'message': '사용자를 찾을 수 없습니다.'})
@@ -93,7 +92,7 @@ def main():
             else:
                 user['progress'] = 0
 
-        ranking_sql = text("SELECT name, score FROM users ORDER BY score DESC, name ASC")
+        ranking_sql = text("SELECT name, COALESCE(score, 0) AS score FROM users ORDER BY score DESC, name ASC")
         ranking_result = db.execute(ranking_sql)
         ranking_list = [dict(row._mapping) for row in ranking_result.fetchall()]
 
@@ -134,7 +133,7 @@ def update_user(user_id):
 def update_progress_and_score(user_id):
     db = get_db_connection()
     try:
-        count_sql = text("SELECT COUNT(*) AS total, SUM(is_done) AS done FROM todos WHERE user_id = :user_id")
+        count_sql = text("SELECT COUNT(*) AS total, SUM(is_done::int) AS done FROM todos WHERE user_id = :user_id")
         result = db.execute(count_sql, {"user_id": user_id}).fetchone()
         total = result._mapping['total']
         done = result._mapping['done'] or 0
@@ -143,13 +142,17 @@ def update_progress_and_score(user_id):
         score_sql = text("SELECT score FROM users WHERE user_id = :user_id")
         current_score = db.execute(score_sql, {"user_id": user_id}).fetchone()._mapping['score'] or 0
 
-        score_increase = 1 if progress == 100 and current_score == 0 else 0
-        new_score = current_score + score_increase
+        logging.debug(f"[update_progress_and_score] user_id={user_id} total={total} done={done} progress={progress} current_score={current_score}")
 
-        update_sql = text("UPDATE users SET score = :score WHERE user_id = :user_id")
-        db.execute(update_sql, {"score": new_score, "user_id": user_id})
-
-        db.commit()
+        # 진행률 100% 이상일 때마다 1점씩 누적 점수 상승 (무제한)
+        if progress >= 100:
+            new_score = current_score + 1
+            update_sql = text("UPDATE users SET score = :score WHERE user_id = :user_id")
+            db.execute(update_sql, {"score": new_score, "user_id": user_id})
+            db.commit()
+        else:
+            # 진행률이 100% 미만이면 점수 유지
+            pass
     except Exception as e:
         logging.error(f"점수 업데이트 중 오류: {e}", exc_info=True)
     finally:
@@ -186,7 +189,7 @@ def toggle_todo(todo_id):
         if not todo:
             return jsonify({'success': False, 'message': '할 일을 찾을 수 없습니다.'})
 
-        new_status = 0 if todo._mapping['is_done'] else 1
+        new_status = not todo._mapping['is_done']
 
         update_sql = text("UPDATE todos SET is_done = :new_status WHERE todo_id = :todo_id")
         db.execute(update_sql, {"new_status": new_status, "todo_id": todo_id})
