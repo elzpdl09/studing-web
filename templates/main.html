@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>메인 페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f2ff;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1, h2 {
+            color: #005c99;
+        }
+
+        .user-block {
+            margin-bottom: 40px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-name {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #007acc;
+        }
+
+        .score {
+            font-size: 1.2em;
+            color: #009900;
+            margin-left: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: inline-block;
+            width: 120px;
+        }
+
+        input[type="text"],
+        input[type="time"],
+        input[type="number"] {
+            padding: 5px;
+            width: 200px;
+            border: 1px solid #99ccff;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 6px 12px;
+            margin-top: 10px;
+            background-color: #3399ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2a85d0;
+        }
+
+        .todo-list {
+            margin-top: 15px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            background-color: #f0f8ff;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .todo-task {
+            flex-grow: 1;
+        }
+
+        .todo-task[style*="line-through"] {
+            color: gray;
+        }
+
+        .delete-btn {
+            margin-left: 10px;
+            color: red;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            background-color: #cce6ff;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 20px;
+            width: 300px;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            background-color: #3399ff;
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease-in-out;
+        }
+
+        input.new-task-input {
+            padding: 5px;
+            width: 200px;
+            margin-top: 10px;
+            border: 1px solid #99ccff;
+            border-radius: 4px;
+        }
+
+        /* 랭킹 테이블 스타일 */
+        table.ranking-table {
+            width: 400px;
+            border-collapse: collapse;
+            margin-top: 50px;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table.ranking-table th,
+        table.ranking-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        table.ranking-table th {
+            background-color: #cce6ff;
+            color: #003d66;
+        }
+
+        table.ranking-table tr:nth-child(even) {
+            background-color: #f2f9ff;
+        }
+    </style>
+</head>
+<body>
+
+{% for user in user_list %}
+<div class="user-block" id="user-{{ user.user_id }}">
+    <div>
+        <span class="user-name">{{ user.name }}</span>
+        <span class="score">점수: {{ user.score or 0 }}</span>
+    </div>
+
+    <!-- 사용자 정보 수정 폼 -->
+    <form method="POST" action="/update/{{ user.user_id }}">
+        <div class="input-group">
+            <label for="wake_up_time_{{ user.user_id }}">기상 시간:</label>
+            <input id="wake_up_time_{{ user.user_id }}" type="time" name="wake_up_time" value="{{ user.wake_up_time or '' }}">
+        </div>
+        <div class="input-group">
+            <label for="phone_usage_{{ user.user_id }}">폰 사용 시간(분):</label>
+            <input id="phone_usage_{{ user.user_id }}" type="number" name="phone_usage" value="{{ user.phone_usage or '' }}">
+        </div>
+        <div class="input-group">
+            <label for="study_time_{{ user.user_id }}">공부 시간(분):</label>
+            <input id="study_time_{{ user.user_id }}" type="number" name="study_time" value="{{ user.study_time or '' }}">
+        </div>
+        <button type="submit">저장</button>
+    </form>
+
+    <!-- 진행률 표시 -->
+    <div class="progress-bar" title="진행률 {{ user.progress }}%">
+        <div class="progress-bar-fill" style="width: {{ user.progress }}%;"></div>
+    </div>
+    <div>진행률: {{ user.progress }}%</div>
+
+    <!-- 투두 리스트 -->
+    <div class="todo-list" data-user-id="{{ user.user_id }}">
+        {% for todo in user.todos %}
+        <div class="todo-item" data-todo-id="{{ todo.todo_id }}">
+            <input type="checkbox" class="todo-checkbox" {% if todo.is_done %}checked{% endif %}>
+            <span class="todo-task" {% if todo.is_done %}style="text-decoration: line-through;"{% endif %}>{{ todo.task }}</span>
+            <button class="delete-btn" title="삭제">×</button>
+        </div>
+        {% endfor %}
+        <input type="text" class="new-task-input" placeholder="새 할 일을 입력하세요">
+        <button class="add-task-btn">추가</button>
+    </div>
+</div>
+{% endfor %}
+
+<!-- 점수별 랭킹표 -->
+<h2>랭킹</h2>
+<table class="ranking-table">
+    <thead>
+        <tr><th>순위</th><th>이름</th><th>점수</th></tr>
+    </thead>
+    <tbody>
+        {% for user in ranking_list %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.score or 0 }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">등록된 사용자가 없습니다.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // 할 일 추가
+    document.querySelectorAll('.add-task-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const container = btn.closest('.todo-list');
+            const userId = container.getAttribute('data-user-id');
+            const input = container.querySelector('.new-task-input');
+            const task = input.value.trim();
+            if (!task) {
+                alert('할 일을 입력하세요.');
+                return;
+            }
+            fetch(`/add_todo/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert('할 일 추가 실패: ' + data.message);
+            })
+            .catch(() => alert('서버 오류 발생'));
+        });
+    });
+
+    // 체크박스 토글 & 삭제 버튼
+    document.querySelectorAll('.todo-list').forEach(todoList => {
+        todoList.addEventListener('click', e => {
+            // 체크박스 상태 변경
+            if (e.target.classList.contains('todo-checkbox')) {
+                const todoItem = e.target.closest('.todo-item');
+                const todoId = todoItem.getAttribute('data-todo-id');
+                fetch(`/toggle_todo/${todoId}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('업데이트 실패: ' + data.message);
+                    })
+                    .catch(() => alert('서버 오류 발생'));
+            }
+
+            // 삭제 버튼
+            if (e.target.classList.contains('delete-btn')) {
+                if (!confirm('정말 삭제하시겠습니까?')) return;
+                const todoItem = e.target.closest('.todo-item');
+                const todoId = todoItem.getAttribute('data-todo-id');
+                fetch(`/delete_todo/${todoId}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('삭제 실패: ' + data.message);
+                    })
+                    .catch(() => alert('서버 오류 발생'));
+            }
+        });
+    });
+</script>
+</body>
+</html>

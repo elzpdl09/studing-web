@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원가입 / 로그인</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 50px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 40px;
+    }
+    .btn {
+      display: block;
+      width: 200px;
+      margin: 10px auto;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .signup {
+      background-color: #ccc;
+      color: black;
+    }
+    .login {
+      background-color: #4CAF50;
+      color: white;
+    }
+    #form-container {
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      width: 180px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>회원가입, 로그인 페이지</h1>
+
+  <button id="signup-btn" class="btn signup">회원가입</button>
+  <button id="login-btn" class="btn login">로그인</button>
+
+  <div id="form-container">
+    <div id="signup-form" style="display: none;">
+      <input type="text" id="signup-name" placeholder="이름 입력" />
+    </div>
+
+    <div id="login-form" style="display: none;">
+      <input type="text" id="login-name" placeholder="이름 입력" />
+    </div>
+  </div>
+
+  <script>
+    const signupBtn = document.getElementById('signup-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const signupForm = document.getElementById('signup-form');
+    const loginForm = document.getElementById('login-form');
+
+    function submitSignup() {
+      const name = document.getElementById('signup-name').value.trim();
+      if (name === '') {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+
+      fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success){
+          alert('회원가입이 완료되었습니다!');
+          document.getElementById('signup-name').value = '';
+          signupForm.style.display = 'none';
+        } else {
+          alert('회원가입 실패: ' + data.message);
+        }
+      })
+      .catch(() => alert('서버 오류 발생'));
+    }
+
+    function submitLogin() {
+      const name = document.getElementById('login-name').value.trim();
+      if (name === '') {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = data.redirect;  // 로그인 성공 시 리다이렉트
+        } else {
+          alert('로그인 실패: ' + data.message);
+        }
+      })
+      .catch(() => alert('서버 오류 발생'));
+    }
+
+    signupBtn.addEventListener('click', () => {
+      signupForm.style.display = 'block';
+      loginForm.style.display = 'none';
+      document.getElementById('signup-name').focus();
+    });
+
+    loginBtn.addEventListener('click', () => {
+      loginForm.style.display = 'block';
+      signupForm.style.display = 'none';
+      document.getElementById('login-name').focus();
+    });
+
+    document.getElementById('signup-name').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        submitSignup();
+      }
+    });
+
+    document.getElementById('login-name').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        submitLogin();
+      }
+    });
+  </script>
+
+</body>
+</html>
