@@ -165,7 +165,7 @@ def add_todo(user_id):
 
     db = get_db_connection()
     try:
-        sql = text("INSERT INTO todos (user_id, task, is_done) VALUES (:user_id, :task, 0)")
+        sql = text("INSERT INTO todos (user_id, task, is_done) VALUES (:user_id, :task, false)")
         db.execute(sql, {"user_id": user_id, "task": task})
         db.commit()
         update_progress_and_score(user_id)
