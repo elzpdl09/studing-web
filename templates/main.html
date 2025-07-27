@@ -198,6 +198,9 @@
         {% endfor %}
         <input type="text" class="new-task-input" placeholder="새 할 일을 입력하세요">
         <button class="add-task-btn">추가</button>
+
+        <button class="delete-all-btn" style="color: red; background: none; border: none; margin-top: 8px; font-weight: bold; cursor: pointer;">전체 삭제</button>
+
     </div>
 </div>
 {% endfor %}
@@ -278,6 +281,24 @@
             }
         });
     });
+
+    // 전체 삭제 버튼 기능
+document.querySelectorAll('.delete-all-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const container = btn.closest('.todo-list');
+        const userId = container.getAttribute('data-user-id');
+        if (!confirm('정말 모든 할 일을 삭제하시겠습니까?')) return;
+
+        fetch(`/delete_all_todos/${userId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert('전체 삭제 실패: ' + data.message);
+            })
+            .catch(() => alert('서버 오류 발생'));
+    });
+});
+
 </script>
 </body>
 </html>

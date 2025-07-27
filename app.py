@@ -227,5 +227,22 @@ def delete_todo(todo_id):
     finally:
         db.close()
 
+@app.route('/delete_all_todos/<int:user_id>', methods=['POST'])
+def delete_all_todos(user_id):
+    db = get_db_connection()
+    try:
+        delete_sql = text("DELETE FROM todos WHERE user_id = :user_id")
+        db.execute(delete_sql, {"user_id": user_id})
+        db.commit()
+
+        update_progress_and_score(user_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        logging.error(f"전체 할 일 삭제 실패: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        db.close()
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
