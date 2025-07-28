@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <title>메인 페이지</title>
+
+    <!-- FontAwesome CDN 추가 -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +20,25 @@
 
         h1, h2 {
             color: #005c99;
+            text-align: center;
         }
+        .operation-method {
+    background-color: #f0f8ff;
+    border: 2px solid #3399ff;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    color: #003d66;
+    text-align: left; /* 여기를 추가했습니다 */
+}
+
+.operation-method h2 {
+    margin-top: 0;
+    font-weight: bold;
+}
 
         .user-block {
             margin-bottom: 40px;
@@ -23,11 +48,31 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
         .user-name {
             font-size: 2em;
             font-weight: bold;
-            margin-bottom: 10px;
-            color: #007acc;
+            color: black; /* 이름 검은색 고정 */
+            user-select: text;
+        }
+
+        .crown {
+            font-size: 1.8em;
+            vertical-align: middle;
+            margin-left: 5px;
+            user-select: none;
+        }
+
+        .level {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #555;
         }
 
         .score {
@@ -35,6 +80,23 @@
             color: #009900;
             margin-left: 10px;
         }
+
+        /* 레벨별 왕관 색상 */
+        .crown-level-1  { color: black; }
+        .crown-level-2  { color: #3eb489; }   /* 민트색 */
+        .crown-level-3  { color: #3B82F6; }   /* 파란색 */
+        .crown-level-4  { color: #B7E778; }   /* 연두색 */
+        .crown-level-5  { color: #2E7D32; }   /* 초록색 */
+        .crown-level-6  { color: #F9E79F; }   /* 노랑색 */
+        .crown-level-7  { color: #F39C12; }   /* 주황색 */
+        .crown-level-8  { color: #E74C3C; }   /* 빨간색 */
+        .crown-level-9  {
+            background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        } /* 무지개색 텍스트 효과 */
+        .crown-level-10 { color: gold; }
 
         .input-group {
             margin-bottom: 10px;
@@ -127,11 +189,10 @@
             border-radius: 4px;
         }
 
-        /* 랭킹 테이블 스타일 */
         table.ranking-table {
             width: 400px;
             border-collapse: collapse;
-            margin-top: 50px;
+            margin: 50px auto;
             background-color: white;
             border-radius: 8px;
             overflow: hidden;
@@ -156,56 +217,72 @@
     </style>
 </head>
 <body>
+<h1>공부 습관 관리 시스템</h1>
+
+
+<section class="operation-method">
+  <h2>사이트 설명</h2>
+  <p>
+      1.매일 기상시간, 폰 사용시간, 공부시간 기록
+      </p>
+    <p>
+      2.플래너를 완료시 점수 1점 추가(다 끝내면 전체삭제로 지우기)
+    </p>
+    <p>
+        3.1주에 한번 점수 꼴등(혼자일때)은 노트정리한 것 톡방에 올리기
+        </p>
+    <p>
+         4.한달에 한번 점수 꼴등이 1등에게 기프티콘 쏘기
+  </p>
+</section>
 
 {% for user in user_list %}
+{% set level = (user.score or 0) // 3 + 1 %}
+{% if level > 10 %}{% set level = 10 %}{% endif %}
 <div class="user-block" id="user-{{ user.user_id }}">
-    <div>
+    <div class="user-header">
         <span class="user-name">{{ user.name }}</span>
+        <i class="fas fa-crown crown crown-level-{{ level }}"></i>
+        <span class="level">Lv.{{ level }}</span>
         <span class="score">점수: {{ user.score or 0 }}</span>
     </div>
 
-    <!-- 사용자 정보 수정 폼 -->
     <form method="POST" action="/update/{{ user.user_id }}">
         <div class="input-group">
-            <label for="wake_up_time_{{ user.user_id }}">기상 시간:</label>
-            <input id="wake_up_time_{{ user.user_id }}" type="time" name="wake_up_time" value="{{ user.wake_up_time or '' }}">
+            <label>기상 시간:</label>
+            <input type="time" name="wake_up_time" value="{{ user.wake_up_time or '' }}">
         </div>
         <div class="input-group">
-            <label for="phone_usage_{{ user.user_id }}">폰 사용 시간(분):</label>
-            <input id="phone_usage_{{ user.user_id }}" type="number" name="phone_usage" value="{{ user.phone_usage or '' }}">
+            <label>폰 사용 시간(분):</label>
+            <input type="number" name="phone_usage" value="{{ user.phone_usage or '' }}">
         </div>
         <div class="input-group">
-            <label for="study_time_{{ user.user_id }}">공부 시간(분):</label>
-            <input id="study_time_{{ user.user_id }}" type="number" name="study_time" value="{{ user.study_time or '' }}">
+            <label>공부 시간(분):</label>
+            <input type="number" name="study_time" value="{{ user.study_time or '' }}">
         </div>
         <button type="submit">저장</button>
     </form>
 
-    <!-- 진행률 표시 -->
     <div class="progress-bar" title="진행률 {{ user.progress }}%">
         <div class="progress-bar-fill" style="width: {{ user.progress }}%;"></div>
     </div>
     <div>진행률: {{ user.progress }}%</div>
 
-    <!-- 투두 리스트 -->
     <div class="todo-list" data-user-id="{{ user.user_id }}">
         {% for todo in user.todos %}
         <div class="todo-item" data-todo-id="{{ todo.todo_id }}">
             <input type="checkbox" class="todo-checkbox" {% if todo.is_done %}checked{% endif %}>
             <span class="todo-task" {% if todo.is_done %}style="text-decoration: line-through;"{% endif %}>{{ todo.task }}</span>
-            <button class="delete-btn" title="삭제">×</button>
+            <button class="delete-btn">×</button>
         </div>
         {% endfor %}
         <input type="text" class="new-task-input" placeholder="새 할 일을 입력하세요">
         <button class="add-task-btn">추가</button>
-
-        <button class="delete-all-btn" style="color: red; background: none; border: none; margin-top: 8px; font-weight: bold; cursor: pointer;">전체 삭제</button>
-
+        <button class="delete-all-btn">전체 삭제</button>
     </div>
 </div>
 {% endfor %}
 
-<!-- 점수별 랭킹표 -->
 <h2>랭킹</h2>
 <table class="ranking-table">
     <thead>
@@ -250,13 +327,11 @@
         });
     });
 
-    // 체크박스 토글 & 삭제 버튼
+    // 체크박스 및 삭제
     document.querySelectorAll('.todo-list').forEach(todoList => {
         todoList.addEventListener('click', e => {
-            // 체크박스 상태 변경
             if (e.target.classList.contains('todo-checkbox')) {
-                const todoItem = e.target.closest('.todo-item');
-                const todoId = todoItem.getAttribute('data-todo-id');
+                const todoId = e.target.closest('.todo-item').getAttribute('data-todo-id');
                 fetch(`/toggle_todo/${todoId}`, { method: 'POST' })
                     .then(res => res.json())
                     .then(data => {
@@ -266,11 +341,9 @@
                     .catch(() => alert('서버 오류 발생'));
             }
 
-            // 삭제 버튼
             if (e.target.classList.contains('delete-btn')) {
                 if (!confirm('정말 삭제하시겠습니까?')) return;
-                const todoItem = e.target.closest('.todo-item');
-                const todoId = todoItem.getAttribute('data-todo-id');
+                const todoId = e.target.closest('.todo-item').getAttribute('data-todo-id');
                 fetch(`/delete_todo/${todoId}`, { method: 'POST' })
                     .then(res => res.json())
                     .then(data => {
@@ -282,23 +355,20 @@
         });
     });
 
-    // 전체 삭제 버튼 기능
-document.querySelectorAll('.delete-all-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const container = btn.closest('.todo-list');
-        const userId = container.getAttribute('data-user-id');
-        if (!confirm('정말 모든 할 일을 삭제하시겠습니까?')) return;
-
-        fetch(`/delete_all_todos/${userId}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) location.reload();
-                else alert('전체 삭제 실패: ' + data.message);
-            })
-            .catch(() => alert('서버 오류 발생'));
+    // 전체 삭제
+    document.querySelectorAll('.delete-all-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const userId = btn.closest('.todo-list').getAttribute('data-user-id');
+            if (!confirm('정말 모든 할 일을 삭제하시겠습니까?')) return;
+            fetch(`/delete_all_todos/${userId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                    else alert('전체 삭제 실패: ' + data.message);
+                })
+                .catch(() => alert('서버 오류 발생'));
+        });
     });
-});
-
 </script>
 </body>
 </html>
