@@ -83,7 +83,7 @@
 
         /* 레벨별 왕관 색상 */
         .crown-level-1  { color: black; }
-        .crown-level-2  { color: #3eb489; }   /* 민트색 */
+        .crown-level-2  { color: #00eaff; }   /* 민트색 */
         .crown-level-3  { color: #3B82F6; }   /* 파란색 */
         .crown-level-4  { color: #B7E778; }   /* 연두색 */
         .crown-level-5  { color: #2E7D32; }   /* 초록색 */
@@ -97,6 +97,27 @@
             color: transparent;
         } /* 무지개색 텍스트 효과 */
         .crown-level-10 { color: gold; }
+        .crown-level-11 { color: gold; }
+        .crown-level-12 { color: #E5E4E2; }  /* 플래티넘 */
+        .crown-level-13 { color: #E5E4E2; }  /* 플래티넘 */
+        .crown-level-14 { color: #2ecc71; }  /* 에메랄드 */
+        .crown-level-15 { color: #2ecc71; }  /* 에메랄드 */
+        .crown-level-16 { color: #E0115F; }  /* 루비 */
+        .crown-level-17 { color: #E0115F; }  /* 루비 */
+        .crown-level-18 { color: #b9f2ff; }  /* 다이아몬드 */
+        .crown-level-19 { color: #b9f2ff; }  /* 다이아몬드 */
+        .crown-level-20 { color: #b9f2ff; }  /* 다이아몬드 */
+
+       .crown-level-41 { color: gold; }
+        .crown-level-42 { color: gold; }
+        .crown-level-43 { color: #E5E4E2; }  /* 플래티넘 */
+        .crown-level-44 { color: #E5E4E2; }  /* 플래티넘 */
+        .crown-level-45 { color: #2ecc71; }  /* 에메랄드 */
+        .crown-level-46 { color: #2ecc71; }  /* 에메랄드 */
+        .crown-level-47 { color: #E0115F; }  /* 루비 */
+        .crown-level-48 { color: #E0115F; }  /* 루비 */
+        .crown-level-49 { color: #b9f2ff; }  /* 다이아몬드 */
+        .crown-level-50 { color: #b9f2ff; }  /* 다이아몬드 */
 
         .input-group {
             margin-bottom: 10px;
@@ -240,12 +261,36 @@
 </section>
 
 {% for user in user_list %}
-{% set level = (user.score or 0) // 3 + 1 %}
-{% if level > 10 %}{% set level = 10 %}{% endif %}
+{% set score = user.score or 0 %}
+
+{% if score < 30 %}
+  {% set level = (score // 3) + 1 %}
+{% elif score < 80 %}
+  {% set level = 10 + ((score - 30) // 5) + 1 %}
+{% elif score < 150 %}
+  {% set level = 20 + ((score - 80) // 7) + 1 %}
+{% else %}
+  {% set level = 30 + ((score - 150) // 10) + 1 %}
+{% endif %}
+
+{% if level > 50 %}
+  {% set level = 50 %}
+{% endif %}
+
 <div class="user-block" id="user-{{ user.user_id }}">
     <div class="user-header">
         <span class="user-name">{{ user.name }}</span>
-        <i class="fas fa-crown crown crown-level-{{ level }}"></i>
+        {% if level <= 20 %}
+  <i class="fas fa-medal crown crown-level-{{ level }}"></i>
+{% elif level <= 40 %}
+  <i class="fas fa-crown crown crown-level-{{ level-20 }}"></i>
+{% else %}
+  <!-- 41레벨 이상은 왕관 3개 연속 출력 -->
+  <i class="fas fa-crown crown crown-level-{{ level }}"></i>
+  <i class="fas fa-crown crown crown-level-{{ level }}"></i>
+  <i class="fas fa-crown crown crown-level-{{ level }}"></i>
+{% endif %}
+
         <span class="level">Lv.{{ level }}</span>
         <span class="score">점수: {{ user.score or 0 }}</span>
     </div>
