@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>퀴즈:30문제 정답시 개인 점수+1점</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            padding: 40px;
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 30px;
+            margin: 0 auto;
+            width: 400px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .question {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .score {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .buttons button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .buttons button:hover {
+            background-color: #45a049;
+        }
+        .back-button {
+            margin-top: 20px;
+            background-color: #888 !important;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+        }
+        table {
+            margin: 30px auto 0;
+            border-collapse: collapse;
+            width: 80%;
+            max-width: 500px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+        }
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        caption {
+            caption-side: top;
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div class="score">퀴즈 점수: <span id="quiz-score">0</span></div>
+        <div class="question" id="question">문제를 불러오는 중...</div>
+
+        <div class="buttons">
+            <button onclick="answer(true)">O</button>
+            <button onclick="answer(false)">X</button>
+        </div>
+
+        <button class="back-button" onclick="location.href='{{ url_for('main', username=request.args.get('username', '게스트')) }}'">← 메인으로 돌아가기</button>
+    </div>
+
+    <table id="ranking-table" aria-label="퀴즈 점수 랭킹">
+        <caption>퀴즈 점수 랭킹 (상위 10명)</caption>
+        <thead>
+            <tr>
+                <th>순위</th>
+                <th>이름</th>
+                <th>퀴즈 점수</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="3">불러오는 중...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        let questions = [];
+        let score = 0;
+        let current;
+
+        // 퀴즈 문제 랜덤 선택 및 표시
+        function getRandomQuestion() {
+            if(questions.length === 0){
+                document.getElementById("question").innerText = "문제 데이터가 없습니다.";
+                return;
+            }
+            current = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById("question").innerText = current.q;
+        }
+
+        // 답변 처리
+        async function answer(userAnswer) {
+            if (userAnswer === current.a) {
+                score++;
+                document.getElementById("quiz-score").innerText = score;
+
+                // 서버에 퀴즈 점수 업데이트 요청
+                try {
+                    const username = new URLSearchParams(window.location.search).get('username') || '게스트';
+                    const response = await fetch('/update_quiz_score', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({username})
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        // 랭킹 새로고침
+                        loadRanking();
+                    } else {
+                        console.error('퀴즈 점수 업데이트 실패:', data.message);
+                    }
+                } catch (e) {
+                    console.error('서버 요청 중 오류:', e);
+                }
+            }
+            getRandomQuestion();
+        }
+
+        // 랭킹 로드 및 테이블 표시
+        async function loadRanking() {
+            const tbody = document.querySelector('#ranking-table tbody');
+            tbody.innerHTML = '<tr><td colspan="3">불러오는 중...</td></tr>';
+
+            try {
+                const response = await fetch('/quiz_ranking');
+                const data = await response.json();
+
+                if (data.success) {
+                    tbody.innerHTML = '';  // 초기화
+
+                    if (data.ranking.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3">랭킹 데이터가 없습니다.</td></tr>';
+                        return;
+                    }
+
+                    data.ranking.forEach((user, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${user.name}</td>
+                            <td>${user.quiz_score}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3">오류: ${data.message}</td></tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="3">랭킹을 불러오는 중 오류 발생</td></tr>`;
+                console.error('랭킹 로드 실패:', e);
+            }
+        }
+
+        // JSON 파일에서 문제 불러오기
+        async function loadQuestions() {
+            try {
+                const response = await fetch('/static/data/quiz_questions.json');
+                questions = await response.json();
+                getRandomQuestion();
+            } catch (e) {
+                console.error('퀴즈 문제 불러오기 실패', e);
+                document.getElementById("question").innerText = "문제를 불러오지 못했습니다.";
+            }
+        }
+
+        window.onload = () => {
+            loadQuestions();
+            loadRanking();
+        };
+    </script>
+
+</body>
+</html>

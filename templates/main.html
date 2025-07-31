@@ -261,7 +261,34 @@
     <p>
       6.플래너 진행률 100 찍은 후에 지울 땐 반드시 전체 삭제로 지우기
   </p>
+    <p>
+        7.O/X 퀴즈는 30개 맞출 때마다 1점씩 메인 점수가 추가됨
+    </p>
+    <p>
+        8.매일 랭킹 1등은 관리자에게 문의하여 퀴즈 문제 최대 3개 추가 가능
+    </p>
 </section>
+
+<div style="text-align: center; margin: 20px 0;">
+  <a href="{{ url_for('quiz', username=username) }}">
+    <button type="button" style="
+      padding: 15px 30px;
+      font-size: 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    ">
+      퀴즈 버튼
+    </button>
+  </a>
+</div>
+
+<!-- 사용자 이름 표시 (아래쪽에 약간 여백 추가) -->
+<h3 style="text-align: center; margin-top: 30px;">
+
+</h3>
 
 {% for user in user_list %}
 {% set score = user.score or 0 %}

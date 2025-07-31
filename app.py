@@ -2,7 +2,13 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 import logging
-
+'''
+깃허브 배포 코드
+git status
+git add .
+git commit -m "변경사항 설명"
+git push origin main
+'''
 app = Flask(__name__)
 
 # 로그 레벨 설정 (디버깅용)
@@ -24,6 +30,10 @@ def get_db_connection():
 @app.route('/')
 def index():
     return render_template('index.html')
+@app.route('/quiz')
+def quiz():
+    username = request.args.get('username', '게스트')
+    return render_template('quiz.html', username=username)
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -242,7 +252,59 @@ def delete_all_todos(user_id):
         return jsonify({'success': False, 'message': str(e)})
     finally:
         db.close()
+@app.route('/update_quiz_score', methods=['POST'])
+def update_quiz_score():
+    data = request.get_json()
+    username = data.get('username')
 
+    if not username:
+        return jsonify({'success': False, 'message': '사용자 이름이 없습니다.'})
+
+    db = get_db_connection()
+    try:
+        # 사용자 정보 조회
+        user_sql = text("SELECT user_id, quiz_score, score FROM users WHERE name = :name")
+        user = db.execute(user_sql, {"name": username}).fetchone()
+
+        if not user:
+            return jsonify({'success': False, 'message': '사용자를 찾을 수 없습니다.'})
+
+        quiz_score = (user._mapping['quiz_score'] or 0) + 1
+        score = user._mapping['score'] or 0
+
+        if quiz_score >= 30:
+
+            score += 1
+
+        # 업데이트
+        update_sql = text("UPDATE users SET quiz_score = :quiz_score, score = :score WHERE user_id = :user_id")
+        db.execute(update_sql, {
+            "quiz_score": quiz_score,
+            "score": score,
+            "user_id": user._mapping['user_id']
+        })
+        db.commit()
+
+        return jsonify({'success': True, 'quiz_score': quiz_score, 'score': score})
+    except Exception as e:
+        logging.error(f"퀴즈 점수 업데이트 오류: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        db.close()
+
+@app.route('/quiz_ranking')
+def quiz_ranking():
+    db = get_db_connection()
+    try:
+        sql = text("SELECT name, quiz_score FROM users ORDER BY quiz_score DESC, name ASC LIMIT 10")
+        result = db.execute(sql)
+        ranking_list = [dict(row._mapping) for row in result.fetchall()]
+        return jsonify({'success': True, 'ranking': ranking_list})
+    except Exception as e:
+        logging.error(f"랭킹 조회 실패: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        db.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
