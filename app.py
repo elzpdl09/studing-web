@@ -273,7 +273,7 @@ def update_quiz_score():
         score = user._mapping['score'] or 0
 
         if quiz_score >= 30:
-
+            quiz_score=0
             score += 1
 
         # 업데이트
